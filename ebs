@@ -1,0 +1,69 @@
+WEEK-10--Elasticbeanstalk
+
+Prerequisites
+A web application ready (e.g., .war, .zip, or code)
+
+ Steps to Create Elastic Beanstalk Application
+Step 1: Open Elastic Beanstalk
+1.Login to AWS Console
+2.Under Compute section ->Search for Elastic Beanstalk
+3.Click Create Application
+
+ Step 2: Create Application
+1.Enter Application Name (e.g., MyApp)
+2.Add description (optional)
+3.Click Create
+
+ Step 3: Create Environment
+1.Click Create Environment
+2.Choose:
+o Web Server Environment (for web apps)
+3.Click Select
+
+ Step 4: Configure Environment
+1.Enter Environment Name
+2.Choose Platform:
+otomcat (for .war)
+otomcat     /Node.js / Python / PHP / etc.
+3.Under Application Code:
+oSelect Upload your code
+oUpload your .war or .zip file
+
+ Step 5: Configure Service Access
+1.Service Role → Select existing  -LabRole
+2.EC2 Key Pair → Optional (for SSH)
+3.EC2 Instance Profile → select (e.g., LabInstanceProfile)
+
+ Step 6: Configure Network
+1.Select VPC (default is fine)
+2.Select Subnets
+3.Enable Public IP
+
+ Step 7: Instance & Scaling Setup
+1.Choose Instance type (e.g., t2.micro – free tier)
+2.Set:
+oMin instances: 1
+oMax instances: 2 (or more)
+3.Load Balancer → Enabled (optional but recommended)
+
+ Step 8: Review & Create
+1.Click Review
+2.Click Create
+
+ Deployment Process
+AWS automatically creates:
+oEC2 instances
+oLoad Balancer
+oAuto Scaling Group
+oSecurity Groups
+
+ Access Your Application
+After deployment:
+oYou will get a URL (domain link)
+oOpen it in browser → Your app will run 
+
+Updating Application
+1.Go to your environment
+2.Click Upload and Deploy
+3.Upload new version
+
