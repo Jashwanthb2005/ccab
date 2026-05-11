@@ -1,0 +1,201 @@
+PART 1 — VPC NETWORK FOUNDATION
+Step 1: Create VPC
+Login to AWS Console.
+Search VPC in services.
+Click Create VPC.
+Select VPC only.
+Enter:
+Name: Custom-VPC
+IPv4 CIDR: 10.0.0.0/16
+Click Create VPC.
+Wait for “Successfully created”.
+Step 2: Create Public Subnet (Bastion)
+Left menu → Subnets
+Click Create subnet
+Select Custom-VPC
+Name: Public-Subnet
+AZ: choose any (e.g., ap-south-1a)
+CIDR: 10.0.1.0/24
+Click Create.
+Enable Auto Public IP:
+Select Public-Subnet
+Click Actions → Edit subnet settings
+Enable Auto-assign public IPv4
+Save
+Step 3: Create Private Subnet (DB)
+Create subnet again
+Name: Private-Subnet
+AZ: SAME as public subnet
+CIDR: 10.0.2.0/24
+Create
+
+Do NOT enable public IP.
+
+Step 4: Create Internet Gateway
+Left menu → Internet Gateways
+Click Create
+Name: Custom-IGW
+Create
+Click Attach to VPC
+Select Custom-VPC
+Attach
+Step 5: Create Public Route Table
+Go to Route Tables
+Click Create
+Name: Public-RT
+Select Custom-VPC
+Create
+Add Internet Route:
+Select Public-RT
+Go to Routes → Edit routes
+Add:
+Destination: 0.0.0.0/0
+Target: Internet Gateway → select Custom-IGW
+Save
+Associate Public Subnet:
+Go to Subnet Associations
+Edit
+Select Public-Subnet
+Save
+Step 6: Private Route Table
+Create route table
+Name: Private-RT
+Select VPC
+Create
+
+Associate only Private-Subnet.
+Do NOT add IGW route.
+
+PART 2 — SECURITY GROUPS (CRITICAL)
+Step 7: Bastion Security Group
+Go to EC2 → Security Groups
+Create security group
+Name: Bastion-SG
+VPC: Custom-VPC
+Inbound:
+Type: SSH
+Port: 22
+Source: My IP
+
+Save.
+
+Step 8: Database Security Group
+
+Create new SG: DB-SG
+
+Inbound Rules:
+MySQL:
+Port 3306
+Source: 10.0.1.0/24
+SSH:
+Port 22
+Source: Private IP of Bastion (later update)
+
+No public access.
+
+PART 3 — EC2 DEPLOYMENT
+Step 9: Launch Bastion EC2
+EC2 → Launch instance
+Name: Bastion-Server
+OS: Ubuntu
+Instance type: t2.micro
+Key pair: Create bastion.pem
+Network:
+VPC: Custom-VPC
+Subnet: Public-Subnet
+Auto-assign public IP: Enable
+Security Group: Bastion-SG
+Launch
+
+Note down:
+
+Public IP
+Private IP
+Step 10: Launch DB Server EC2
+Launch instance
+Name: DB-Server
+OS: Ubuntu
+Key pair: Create dbserver.pem
+VPC: Custom-VPC
+Subnet: Private-Subnet
+Disable public IP
+Security Group: DB-SG
+Launch
+
+Note private IP (10.0.2.x)
+
+PART 4 — BASTION ACCESS FLOW
+Step 11: SSH into Bastion (Local Machine)
+ssh -i bastion.pem ubuntu@<BASTION_PUBLIC_IP>
+
+If permission error:
+
+chmod 400 bastion.pem
+Step 12: Copy DB Key to Bastion
+
+From your local system:
+
+scp -i bastion.pem dbserver.pem ubuntu@<BASTION_PUBLIC_IP>:/home/ubuntu/
+
+Now SSH again to Bastion.
+
+Check:
+
+ls
+
+You should see dbserver.pem
+
+Set permission:
+
+chmod 400 dbserver.pem
+Step 13: SSH to Private DB Server
+
+Inside Bastion:
+
+ssh -i dbserver.pem ubuntu@10.0.2.x
+
+If connection fails:
+
+Update DB-SG → Allow SSH from Bastion private IP
+
+Connection successful = Bastion architecture working.
+
+PART 5 — ADD NAT GATEWAY (Internet for Private)
+Step 14: Create Elastic IP
+EC2 → Elastic IPs
+Allocate new
+Save
+Step 15: Create NAT Gateway
+VPC → NAT Gateways
+Create
+Name: Custom-NAT
+Subnet: Public-Subnet
+Attach Elastic IP
+Create
+
+Wait until status = Available.
+
+Step 16: Update Private Route Table
+Go to Private-RT
+Edit routes
+Add:
+Destination: 0.0.0.0/0
+Target: NAT Gateway
+Save
+PART 6 — VERIFY INTERNET FROM PRIVATE
+
+SSH:
+
+Local → Bastion → DB server
+
+Inside DB server:
+
+sudo apt update
+
+If it works = NAT working.
+
+If not:
+
+Check NAT in Public subnet
+Check Private-RT association
+Check IGW attached
