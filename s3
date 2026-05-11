@@ -1,0 +1,414 @@
+PART 1 — Create S3 Bucket + Public Access
+STEP 1 — Open S3
+
+Go to:
+
+AWS Console
+Open Amazon S3
+STEP 2 — Create Bucket
+
+Click:
+
+Create bucket
+
+Fill:
+
+Field	Value
+Bucket Name	my-public-bucket-123
+Region	nearest region
+
+Bucket names must be globally unique.
+
+Example:
+
+my-public-bucket-jash-2026
+STEP 3 — Disable Block Public Access
+
+Scroll to:
+
+Block Public Access settings
+
+Uncheck:
+
+Block all public access
+
+Also uncheck all 4 options.
+
+Tick:
+
+I acknowledge...
+Why?
+
+By default S3 blocks public access for security.
+
+STEP 4 — Create Bucket
+
+Click:
+
+Create bucket
+
+Bucket created.
+
+PART 2 — Enable Public Access
+STEP 5 — Open Bucket
+
+Click bucket name.
+
+Go to:
+
+Permissions
+STEP 6 — Enable Bucket ACL Public Read
+
+Scroll to:
+
+Access Control List (ACL)
+
+Click:
+
+Edit
+
+Under:
+
+Everyone (public access)
+
+Enable:
+
+Read
+
+Save changes.
+
+PART 3 — Upload File
+STEP 7 — Upload Object
+
+Go to:
+
+Objects
+
+Click:
+
+Upload
+
+Then:
+
+Add files
+
+Select any file:
+
+image.jpg
+
+Click:
+
+Upload
+STEP 8 — Enable Public Access for Object
+
+Click uploaded file.
+
+Go to:
+
+Permissions
+
+Scroll:
+
+ACL
+
+Click:
+
+Edit
+
+Under:
+
+Everyone (public access)
+
+Enable:
+
+Read
+
+Save changes.
+
+STEP 9 — Test Public URL
+
+Open:
+
+Object URL
+
+Paste in browser.
+
+If configured correctly:
+
+file opens publicly
+PART 4 — Enable Versioning
+STEP 10 — Open Bucket Properties
+
+Inside bucket:
+
+Properties
+
+Scroll:
+
+Bucket Versioning
+
+Click:
+
+Edit
+
+Select:
+
+Enable
+
+Save changes.
+
+STEP 11 — Upload Same File Again
+
+Upload:
+
+report.pdf
+
+again with same name.
+
+What Happens?
+
+S3:
+
+keeps old version
+creates new version
+
+Nothing is overwritten permanently.
+
+STEP 12 — View Versions
+
+Go to:
+
+Objects
+
+Enable:
+
+Show versions
+
+You will see:
+
+multiple versions
+unique Version IDs
+STEP 13 — Delete File
+
+Delete:
+
+report.pdf
+What Happens?
+
+S3 creates:
+
+Delete Marker
+
+Old versions still exist.
+
+STEP 14 — Restore Deleted File
+
+Remove delete marker.
+
+The older file becomes visible again.
+
+PART 5 — Cross Region Replication (CRR)
+What CRR Does
+
+Automatically copies files:
+
+Source Bucket → Destination Bucket
+
+Across different AWS regions.
+
+STEP 15 — Create Destination Bucket
+
+Create another bucket.
+
+Example:
+
+Setting	Value
+Bucket Name	dest-crr-bucket
+Region	Different region
+
+Example:
+
+Source → Mumbai
+Destination → Singapore
+STEP 16 — Enable Versioning on Destination Bucket
+
+Repeat:
+
+Properties → Bucket Versioning → Enable
+
+CRR requires:
+
+versioning ON for both buckets
+STEP 17 — Configure Replication Rule
+
+Open:
+
+Source Bucket
+
+Go:
+
+Management
+
+Open:
+
+Replication Rules
+
+Click:
+
+Create replication rule
+STEP 18 — Configure Rule
+
+Fill:
+
+Field	Value
+Rule Name	academy-crr-rule
+Status	Enabled
+Scope	Apply to all objects
+STEP 19 — Choose Destination Bucket
+
+Select:
+
+Another bucket
+
+Choose destination bucket.
+
+Use:
+
+AWS Managed Role
+STEP 20 — Save Rule
+
+Click:
+
+Save
+
+Replication enabled.
+
+STEP 21 — Test Replication
+
+Upload file to source bucket:
+
+image.png
+
+Open destination bucket.
+
+You should see:
+
+image.png
+
+automatically copied.
+
+PART 6 — Static Website Hosting
+STEP 22 — Create Website Files
+
+Create:
+
+index.html
+
+Example:
+
+<html>
+<body>
+<h1>Welcome to My Website</h1>
+</body>
+</html>
+
+Create:
+
+error.html
+
+Example:
+
+<html>
+<body>
+<h1>Error Page</h1>
+</body>
+</html>
+STEP 23 — Upload Files
+
+Upload:
+
+index.html
+error.html
+
+to bucket.
+
+STEP 24 — Enable Static Website Hosting
+
+Go:
+
+Properties
+
+Scroll:
+
+Static Website Hosting
+
+Click:
+
+Edit
+
+Select:
+
+Enable
+
+Choose:
+
+Host a static website
+
+Fill:
+
+Field	Value
+Index Document	index.html
+Error Document	error.html
+
+Save.
+
+STEP 25 — Make Bucket Public
+
+Go:
+
+Permissions
+
+Enable:
+
+ACL → Everyone → Read
+STEP 26 — Make Objects Public
+
+For BOTH:
+
+index.html
+error.html
+
+Enable:
+
+Everyone → Read
+STEP 27 — Open Website
+
+Go:
+
+Properties
+
+Scroll:
+
+Static Website Hosting
+
+Copy:
+
+Bucket Website Endpoint
+
+Open in browser.
+
+Website loads.
+
+STEP 28 — Test Error Page
+
+Open:
+
+/invalid.html
+
+Example:
+
+http://bucket-name.s3-website-region.amazonaws.com/abc.html
+
+You should see:
+
+error.html
