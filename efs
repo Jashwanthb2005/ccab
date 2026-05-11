@@ -1,0 +1,233 @@
+STEP 1 — Launch EC2 Instances
+
+Go to AWS Console
+
+Then open:
+
+Amazon EC2
+Create First Instance (EFS-1)
+1. Click “Launch Instance”
+2. Configure Instance
+
+Fill:
+
+Setting	Value
+Name	EFS-1
+AMI	Amazon Linux
+Instance Type	t2.micro
+Key Pair	Create/select key pair
+Network	Default VPC
+Subnet	Subnet-1a
+Security Group	Create new
+3. Configure Security Group
+
+Add these inbound rules:
+
+Type	Port	Source
+SSH	22	Anywhere
+NFS	2049	Anywhere
+Why?
+SSH → allows terminal access
+NFS → required for EFS mounting
+4. Launch Instance
+
+Click:
+
+Launch Instance
+Create Second Instance
+
+Repeat same process.
+
+Only change:
+
+Setting	Value
+Name	EFS-2
+Subnet	Subnet-1b
+STEP 2 — Create Amazon EFS
+
+Open:
+
+Amazon EFS
+1. Click “Create File System”
+2. Configure EFS
+Setting	Value
+Name	Optional
+VPC	Default
+Regional	Enabled
+Why Regional?
+
+Regional EFS works across multiple AZs.
+
+3. Network Settings
+
+You will see mount targets.
+
+Important:
+
+Remove default security groups.
+
+Attach:
+
+The same security group used by EC2
+Why?
+
+The EC2 instances and EFS must allow NFS traffic between them.
+
+4. Create File System
+
+Click:
+
+Create File System
+
+Wait until:
+
+Status becomes Available
+STEP 3 — Connect to EC2 Using PowerShell
+Open PowerShell
+
+On Windows:
+
+Open 2 PowerShell windows
+
+One for:
+
+EFS-1
+EFS-2
+Find Public IP
+
+In EC2 dashboard:
+
+Select instance
+Copy Public IPv4 address
+SSH into EFS-1
+
+Example:
+
+ssh -i "efs.pem" ec2-user@54.xx.xx.xx
+Explanation
+Part	Meaning
+ssh	remote login
+-i	identity key
+efs.pem	private key
+ec2-user	Linux username
+IP	EC2 public IP
+Fix Permission Error (If Any)
+
+If Windows says:
+
+bad permissions
+
+Run:
+
+icacls efs.pem /inheritance:r
+icacls efs.pem /grant:r "%username%:R"
+
+Then retry SSH.
+
+Switch to Root User
+
+Run:
+
+sudo su
+Why?
+
+Administrative privileges needed.
+
+Create Directory
+
+Run:
+
+mkdir efs
+
+Check:
+
+ls
+
+You should see:
+
+efs
+Install Amazon EFS Utilities
+
+Run:
+
+yum install -y amazon-efs-utils
+Why?
+
+This package contains:
+
+EFS mount helper
+TLS support
+NFS utilities
+Verify Installation
+
+Run:
+
+rpm -qa | grep efs
+
+OR:
+
+mount.efs --version
+Repeat Same Steps on EFS-2
+
+Do:
+
+SSH
+sudo su
+mkdir efs
+install amazon-efs-utils
+STEP 4 — Attach EFS to EC2
+Get Mount Command
+
+Go to:
+
+EFS console
+Select file system
+Click Attach
+
+Choose:
+
+Mount via DNS
+
+You will see command like:
+
+sudo mount -t efs fs-12345678:/ efs
+Run Command on BOTH EC2 Instances
+
+Example:
+
+mount -t efs fs-12345678:/ efs
+Verify Mount
+
+Run:
+
+df -h
+
+You should see EFS mounted.
+
+Example:
+
+fs-12345678:/   8.0E   0   8.0E   0%   /root/efs
+STEP 5 — Test Shared Storage
+On EFS-1
+
+Go inside directory:
+
+cd efs
+
+Create file:
+
+touch hello.txt
+
+Check:
+
+ls
+On EFS-2
+
+Run:
+
+cd efs
+ls
+
+You should immediately see:
+
+hello.txt
