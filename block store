@@ -1,0 +1,161 @@
+Login to AWS Console
+Open Amazon Web Services EC2 Dashboard
+Go to Elastic Block Store → Volumes
+Click Create Volume
+Select:
+Volume type: gp3/gp2
+Size
+Same Availability Zone as EC2
+Click Create Volume
+Select the created volume
+Click Actions → Attach Volume
+Select the EC2 instance
+Enter device name:
+/dev/xvdf
+Click Attach
+Connect to EC2 using SSH:
+ssh -i key.pem ec2-user@public-ip
+Verify attached disk:
+lsblk
+1(b). Increase CPU and RAM by Changing Instance Type
+Open EC2 Dashboard
+Select the EC2 instance
+Click:
+Instance State → Stop Instance
+After stopping, click:
+Actions → Instance Settings → Change Instance Type
+Select a higher instance type
+Click Apply
+Start the instance:
+Instance State → Start Instance
+2. Permanently Mount an EBS Volume
+Step 1: Create Volume
+Open EC2 Dashboard
+Go to Volumes
+Click Create Volume
+Choose:
+gp3
+20 GB
+Same AZ as EC2
+Click Create Volume
+Step 2: Attach Volume
+Select volume
+Click:
+Actions → Attach Volume
+Select EC2 instance
+Device name:
+/dev/xvdf
+Click Attach
+Step 3: Connect to EC2
+ssh -i key.pem ec2-user@public-ip
+Step 4: Verify Disk
+lsblk
+Step 5: Create Partition
+sudo fdisk /dev/nvme1n1
+
+Inside fdisk:
+
+n
+p
+Enter
+Enter
+Enter
+w
+
+Reload partition table:
+
+sudo partprobe
+Step 6: Verify Partition
+lsblk
+Step 7: Format Partition
+sudo mkfs.xfs /dev/nvme1n1p1
+Step 8: Create Mount Directory
+sudo mkdir /mnt/archana
+Step 9: Mount Volume
+sudo mount /dev/nvme1n1p1 /mnt/archana
+
+Verify:
+
+df -h
+Step 10: Permanent Mount
+
+Get UUID:
+
+sudo blkid /dev/nvme1n1p1
+
+Edit fstab:
+
+sudo nano /etc/fstab
+
+Add:
+
+UUID=your-uuid /mnt/archana xfs defaults,nofail 0 0
+
+Test:
+
+sudo mount -a
+
+Create file:
+
+cd /mnt/archana
+touch f1
+Step 11: Verify Persistence
+
+Reboot:
+
+sudo reboot
+
+Reconnect and verify:
+
+df -h
+Step 12: Detach and Reattach
+
+Detach:
+
+Volumes → Actions → Detach Volume
+
+Attach to another EC2 instance.
+
+Mount:
+
+sudo mkdir /mnt/archana
+sudo mount /dev/nvme1n1p1 /mnt/archana
+3. Snapshot and Cross-Region Volume Creation
+Step 1: Create Snapshot
+Open EC2 Dashboard
+Go to Volumes
+Select EBS volume
+Click:
+Actions → Create Snapshot
+Enter name and description
+Click Create Snapshot
+Step 2: Copy Snapshot to Another Region
+Go to Snapshots
+Select snapshot
+Click:
+Actions → Copy Snapshot
+Select destination region
+Click Copy Snapshot
+Step 3: Monitor Snapshot
+
+Wait until status changes:
+
+pending → completed
+Step 4: Switch Region
+
+Use region selector in AWS Console.
+
+Step 5: Create Volume from Snapshot
+Open Snapshots
+Select copied snapshot
+Click:
+Actions → Create Volume
+Configure size/type/AZ
+Click Create Volume
+Step 6: Attach Volume
+Go to Volumes
+Select new volume
+Click:
+Actions → Attach Volume
+Select EC2 instance
+Click Attach
