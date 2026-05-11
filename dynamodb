@@ -1,0 +1,280 @@
+STEP 1 — Login to AWS
+
+Go to:
+
+AWS Console
+
+Login using AWS account.
+
+STEP 2 — Create DynamoDB Table
+
+Lambda will store uploaded file information here.
+
+Open DynamoDB
+
+Go to:
+
+Amazon DynamoDB
+Create Table
+
+Click:
+
+Create table
+
+Fill:
+
+Field	Value
+Table Name	newtable2
+Partition Key	unique
+
+Type:
+
+String
+Create Table
+
+Click:
+
+Create table
+
+Wait until:
+
+Active
+STEP 3 — Create S3 Bucket
+
+Go to:
+
+Amazon S3
+Create Bucket
+
+Click:
+
+Create bucket
+
+Fill:
+
+Field	Value
+Bucket Name	my-lambda-upload-bucket-123
+Region	nearest region
+
+Create bucket.
+
+STEP 4 — Open Lambda Console
+
+Go to:
+
+AWS Lambda
+STEP 5 — Create Lambda Function
+
+Click:
+
+Create function
+
+Choose:
+
+Author from scratch
+Configure Function
+
+Fill:
+
+Field	Value
+Function Name	S3ToDynamoDB
+Runtime	Python 3.x
+Permissions
+
+Choose:
+
+Create a new role with basic Lambda permissions
+Create Function
+
+Click:
+
+Create function
+STEP 6 — Add DynamoDB Permission to Lambda
+
+Lambda currently cannot access DynamoDB.
+
+Need IAM permissions.
+
+Open Configuration
+
+Inside Lambda:
+
+Go:
+
+Configuration → Permissions
+
+Click IAM Role name.
+
+Add Permission
+
+Inside IAM role:
+
+Click:
+
+Add permissions
+
+Choose:
+
+Attach policies
+
+Search:
+
+AmazonDynamoDBFullAccess
+
+Select it.
+
+Attach policy.
+
+Why?
+
+Allows Lambda to:
+
+insert items into DynamoDB
+STEP 7 — Upload Lambda Code
+
+Inside Lambda:
+
+Code
+
+Remove existing code.
+
+Paste this:
+
+import boto3
+from uuid import uuid4
+
+def lambda_handler(event, context):
+
+    dynamodb = boto3.resource('dynamodb')
+    dynamoTable = dynamodb.Table('newtable2')
+
+    if 'Records' in event:
+        for record in event['Records']:
+
+            bucket_name = record['s3']['bucket']['name']
+            object_key = record['s3']['object']['key']
+            size = record['s3']['object'].get('size', -1)
+            event_name = record['eventName']
+            event_time = record['eventTime']
+
+            dynamoTable.put_item(
+                Item={
+                    'unique': str(uuid4()),
+                    'Bucket': bucket_name,
+                    'Object': object_key,
+                    'Size': size,
+                    'Event': event_name,
+                    'EventTime': event_time
+                }
+            )
+
+    else:
+        print("No S3 event received")
+
+    return {
+        "statusCode": 200,
+        "body": "Data stored in DynamoDB"
+    }
+What This Code Does
+
+When file uploaded:
+
+Lambda receives S3 event
+Reads:
+bucket name
+object name
+file size
+event type
+Stores details in DynamoDB
+STEP 8 — Deploy Lambda
+
+Click:
+
+Deploy
+
+Very important.
+
+Without deploy:
+
+changes won't save
+STEP 9 — Add S3 Trigger
+
+Inside Lambda:
+
+Go:
+
+Designer
+
+Click:
+
+Add trigger
+
+Choose:
+
+S3
+Configure Trigger
+
+Fill:
+
+Field	Value
+Bucket	your bucket
+Event Type	All object create events
+
+Enable:
+
+Recursive invocation acknowledgement
+
+if shown.
+
+Add Trigger
+
+Click:
+
+Add
+What Happens Now?
+
+Whenever:
+
+File uploaded to S3
+
+Lambda automatically runs.
+
+STEP 10 — Test the Setup
+
+Go to S3 bucket.
+
+Upload any file.
+
+Example:
+
+image.jpg
+
+Upload.
+
+STEP 11 — Verify Lambda Execution
+
+Go back to Lambda.
+
+Open:
+
+Monitor
+
+Click:
+
+View CloudWatch Logs
+
+You should see successful execution logs.
+
+STEP 12 — Verify DynamoDB Data
+
+Open:
+
+Amazon DynamoDB
+
+Open table:
+
+newtable2
+
+Go:
+
+Explore table items
