@@ -1,0 +1,341 @@
+STEP 1 — Create VPC
+
+Go to:
+
+AWS Console
+Open Amazon VPC
+Create VPC
+
+Click:
+
+Create VPC
+
+Choose:
+
+VPC only
+
+Fill:
+
+Field	Value
+Name	Custom-VPC
+IPv4 CIDR	10.0.0.0/16
+What CIDR Means
+10.0.0.0/16
+
+Provides:
+
+65,536 IP addresses
+
+Enough for:
+
+future scaling
+Create
+
+Click:
+
+Create VPC
+STEP 2 — Create Public and Private Subnets
+What is a Subnet?
+
+A subnet divides the VPC network.
+
+You will create:
+
+Type	CIDR
+Public	10.0.1.0/24
+Private	10.0.2.0/24
+Create Public Subnet
+
+Go:
+
+Subnets
+
+Click:
+
+Create subnet
+
+Fill:
+
+Field	Value
+VPC	Custom-VPC
+Name	Public-Subnet
+AZ	ap-south-1a
+CIDR	10.0.1.0/24
+
+Create subnet.
+
+Create Private Subnet
+
+Again click:
+
+Create subnet
+
+Fill:
+
+Field	Value
+Name	Private-Subnet
+AZ	ap-south-1a
+CIDR	10.0.2.0/24
+
+Create.
+
+STEP 3 — Create Internet Gateway (IGW)
+Why IGW?
+
+Internet Gateway allows:
+
+internet access for public subnet
+
+Without IGW:
+
+no internet connectivity
+Create IGW
+
+Go:
+
+Internet Gateways
+
+Click:
+
+Create internet gateway
+
+Fill:
+
+Field	Value
+Name	Custom-IGW
+
+Create.
+
+Attach IGW to VPC
+
+Select IGW.
+
+Click:
+
+Attach to VPC
+
+Choose:
+
+Custom-VPC
+
+Attach.
+
+STEP 4 — Create Route Tables
+What is Route Table?
+
+Controls:
+
+where traffic goes
+Create Public Route Table
+
+Go:
+
+Route Tables
+
+Click:
+
+Create route table
+
+Fill:
+
+Field	Value
+Name	Public-RT
+VPC	Custom-VPC
+
+Create.
+
+Add Internet Route
+
+Open:
+
+Routes
+
+Click:
+
+Edit routes
+
+Add:
+
+Destination	Target
+0.0.0.0/0	Internet Gateway
+
+Save.
+
+Associate Public Subnet
+
+Go:
+
+Subnet Associations
+
+Associate:
+
+Public-Subnet
+Create Private Route Table
+
+Create another route table:
+
+Field	Value
+Name	Private-RT
+
+Do NOT add internet gateway route.
+
+Keep only:
+
+local
+
+Associate:
+
+Private-Subnet
+STEP 5 — Enable Auto Public IP
+Why?
+
+Public EC2 needs:
+
+automatic public IP
+Enable
+
+Go:
+
+Subnets
+
+Select:
+
+Public-Subnet
+
+Click:
+
+Edit subnet settings
+
+Enable:
+
+Auto-assign public IPv4
+
+Save.
+
+STEP 6 — Create Security Groups
+What is Security Group?
+
+Acts like:
+
+firewall for EC2
+
+Controls:
+
+inbound traffic
+outbound traffic
+Create Security Group
+
+Go:
+
+Security Groups
+
+Click:
+
+Create security group
+
+Fill:
+
+Field	Value
+Name	Web-SG
+VPC	Custom-VPC
+Add Inbound Rules
+Type	Port	Source
+SSH	22	Your IP
+HTTP	80	Anywhere
+HTTPS	443	Anywhere
+Why Restrict SSH?
+
+Safer than:
+
+0.0.0.0/0
+STEP 7 — Launch EC2 Instances
+
+Go:
+
+Amazon EC2
+Launch Public EC2
+
+Click:
+
+Launch Instance
+
+Fill:
+
+Field	Value
+Name	Public-EC2
+AMI	Amazon Linux
+Type	t2.micro
+Subnet	Public-Subnet
+Auto Public IP	Enabled
+Security Group	Web-SG
+
+Launch.
+
+Launch Private EC2
+
+Again:
+
+Launch Instance
+
+Fill:
+
+Field	Value
+Name	Private-EC2
+Subnet	Private-Subnet
+Auto Public IP	Disabled
+
+Launch.
+
+STEP 8 — Connect to Public EC2
+SSH Command
+
+Example:
+
+ssh -i "mykey.pem" ec2-user@PUBLIC-IP
+Fix Permission Error (Windows)
+
+Run:
+
+icacls mykey.pem /inheritance:r
+icacls mykey.pem /grant:r "%username%:R"
+STEP 9 — Test Internet Access
+
+Inside Public EC2:
+
+Run:
+
+ping google.com
+
+Works because:
+
+subnet connected to IGW
+
+Correct Way To Access Private EC2
+
+You must copy the key into public EC2 first.
+
+🔹 Step 1 — From your local machine
+
+Copy key to public EC2:
+
+scp -i efs2.pem efs2.pem ec2-user@54.196.82.21:~
+🔹 Step 2 — SSH into public EC2
+ssh -i efs2.pem ec2-user@54.196.82.21
+🔹 Step 3 — Set permissions
+
+Inside public EC2:
+
+chmod 400 efs2.pem
+🔹 Step 4 — SSH into private EC2
+ssh -i efs2.pem ec2-user@10.0.2.208
+
+This should now work.
+
+⚠️ Also Check Security Group
+
+Your Private EC2 security group must allow:
+
+Type	Port	Source
+SSH	22	Web-SG
+
+NOT 0.0.0.0/0.
